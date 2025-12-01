@@ -145,7 +145,17 @@ Models, checkpoints, and normalization files have been uploaded to HuggingFace a
 
 ## Citation
 
-If you use this code or build upon this work, please cite the accompanying paper (citation to be added upon publication).
+If you use this code or build upon this work, please cite the accompanying paper:
+```
+@article{Lin2025-ko,
+  title     = {Crowdsourcing the Frontier: Advancing Hybrid Physics-ML Climate Simulation via a \$50,000 Kaggle Competition},
+  author    = {Lin, Jerry and Hu, Zeyuan and Beucler, Tom and Frields, Katherine and Christensen, Hannah and Hannah, Walter and Heuer, Helge and Ukkonnen, Peter and Mansfield, Laura A and Zheng, Tian and Peng, Liran and Gupta, Ritwik and Gentine, Pierre and Al-Naher, Yusef and Duan, Mingjiang and Hattori, Kyo and Ji, Weiliang and Li, Chunhan and Matsuda, Kippei and Murakami, Naoki and Ron, Shlomo and Serlin, Marec and Song, Hongjian and Tanabe, Yuma and Yamamoto, Daisuke and Zhou, Jianyao and Pritchard, Mike},
+  journal   = {arXiv preprint arXiv:2511.20963},
+  year      = {2025},
+  month     = {11},
+  url       = {https://arxiv.org/abs/2511.20963}
+}
+```
 
 ## References
 
