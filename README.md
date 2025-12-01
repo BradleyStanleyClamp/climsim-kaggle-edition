@@ -162,7 +162,7 @@ If you use this code or build upon this work, please cite the accompanying paper
 - [ClimSim Kaggle Competition](https://www.kaggle.com/competitions/leap-atmospheric-physics-ai-climsim)
 - Hu et al. (2025). Stable Machine-Learning Parameterization of Subgrid Processes with Real Geography and Full-physics Emulation. [arXiv:2407.00124](https://arxiv.org/abs/2407.00124)
 - [ClimSim Dataset on HuggingFace](https://huggingface.co/LEAP)
-- [FTorch-based E3SM-MMF](https://github.com/zyhu-hu/E3SM_nvlab/tree/ftorch/)
+- [FTorch-based E3SM-MMF](https://github.com/leap-stc/E3SM_nvlab)
 
 ## License
 
