@@ -11,7 +11,7 @@ The [ClimSim Kaggle competition](https://www.kaggle.com/competitions/leap-atmosp
 - **6 Model Architectures**: Implementations of winning Kaggle competition architectures plus baseline
 - **5 Training Configurations**: Architecture-agnostic design variations inspired by competition insights
 - **Multi-seed Training**: Multiple random seeds (7, 43, 1024) for robust evaluation
-- **Online Testing Framework**: Uses [FTorch-based E3SM-MMF](https://github.com/zyhu-hu/E3SM_nvlab/tree/ftorch/climsim_scripts/perlmutter_scripts) for coupled simulations
+- **Online Testing Framework**: Uses [FTorch-based E3SM-MMF](https://github.com/leap-stc/E3SM_nvlab/tree/main/climsim_scripts/perlmutter_scripts) for coupled simulations
 - **Comprehensive Evaluation**: Offline metrics, online simulation analysis, and figure generation scripts
 
 ## Repository Structure
@@ -103,7 +103,7 @@ baseline_models/unet/training_default/
 
 ### Online Testing
 
-Online coupled simulations use FTorch for PyTorch-Fortran integration. See the [FTorch-based E3SM-MMF repository](https://github.com/zyhu-hu/E3SM_nvlab/tree/ftorch/climsim_scripts/perlmutter_scripts) for:
+Online coupled simulations use FTorch for PyTorch-Fortran integration. See the [FTorch-based E3SM-MMF repository](https://github.com/leap-stc/E3SM_nvlab/tree/main/climsim_scripts/perlmutter_scripts) for:
 - E3SM-MMF setup with FTorch
 - Model integration workflow
 - Simulation configuration files
