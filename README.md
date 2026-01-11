@@ -108,6 +108,8 @@ Online coupled simulations use FTorch for PyTorch-Fortran integration. See the [
 - Model integration workflow
 - Simulation configuration files
 
+NOTE: [The version of E3SM-MMF with FTorch](https://github.com/leap-stc/E3SM_nvlab/) used for climsim-kaggle-edition uses a version of YAKL ([commit 4109dc0](https://github.com/mrnorman/YAKL/commit/4109dc02fe1e951a95f401719587e981ea4f4fe4)) that compiles with cudatoolkit 11.7 but fails with cudatoolkit 12.x. As a consequence, newer versions of PyTorch (2.6.0 and up) may be incompatible.
+
 ### Evaluation
 
 The evaluation pipeline consists of multiple phases that separate expensive computations from figure generation.
