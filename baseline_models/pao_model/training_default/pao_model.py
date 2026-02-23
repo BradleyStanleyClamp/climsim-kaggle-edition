@@ -3,17 +3,19 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 from dataclasses import dataclass
-import modulus
-from layers import (
+import physicsnemo as modulus
+from .layers import (
     FeatureScale,
     ResidualBlock,
 )
 from typing import List
+
 """
 Contains the code for the Pao model and its training.
 """
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
 
 @dataclass
 class PaoModelMetaData(modulus.ModelMetaData):
@@ -24,20 +26,22 @@ class PaoModelMetaData(modulus.ModelMetaData):
     amp_cpu: bool = True
     amp_gpu: bool = True
 
+
 class PaoModel(modulus.Module):
-    def __init__(self,
-                 input_profile_num: int = 9, # number of input profile variables
-                 input_scalar_num: int = 17, # number of input scalar variables
-                 target_profile_num: int = 5, # number of target profile variables
-                 target_scalar_num: int = 8, # number of target scalar variables
-                 output_prune: bool = True, # whether or not we prune strato_lev_out levels
-                 strato_lev_out: int = 12, # number of levels to set to zero
-                 loc_embedding: bool = False, # whether or not to use location embedding
-                 embedding_type: str = "positional", # type of location embedding
-                 hidden_profile_num: int = 160, # number of hidden units in MLP for profile
-                 hidden_scalar_num: int = 160, # number of hidden units in MLP for scalar
-                ):
-        super().__init__(meta = PaoModelMetaData())
+    def __init__(
+        self,
+        input_profile_num: int = 9,  # number of input profile variables
+        input_scalar_num: int = 17,  # number of input scalar variables
+        target_profile_num: int = 5,  # number of target profile variables
+        target_scalar_num: int = 8,  # number of target scalar variables
+        output_prune: bool = True,  # whether or not we prune strato_lev_out levels
+        strato_lev_out: int = 12,  # number of levels to set to zero
+        loc_embedding: bool = False,  # whether or not to use location embedding
+        embedding_type: str = "positional",  # type of location embedding
+        hidden_profile_num: int = 160,  # number of hidden units in MLP for profile
+        hidden_scalar_num: int = 160,  # number of hidden units in MLP for scalar
+    ):
+        super().__init__(meta=PaoModelMetaData())
         self.input_profile_num = input_profile_num
         self.input_scalar_num = input_scalar_num
         self.target_profile_num = target_profile_num
@@ -49,11 +53,18 @@ class PaoModel(modulus.Module):
         self.output_prune = output_prune
         self.strato_lev_out = strato_lev_out
         # 60 profile 1d cnn
-        self.feature_scale_list = nn.ModuleList([
-            FeatureScale(self.vertical_level_num) for _ in range(self.input_profile_num)
-        ])
-        self.positional_encoding = nn.Embedding(self.vertical_level_num, self.hidden_profile_num)
-        self.input_linear = nn.Linear(self.input_profile_num, self.hidden_profile_num)  # current, diff
+        self.feature_scale_list = nn.ModuleList(
+            [
+                FeatureScale(self.vertical_level_num)
+                for _ in range(self.input_profile_num)
+            ]
+        )
+        self.positional_encoding = nn.Embedding(
+            self.vertical_level_num, self.hidden_profile_num
+        )
+        self.input_linear = nn.Linear(
+            self.input_profile_num, self.hidden_profile_num
+        )  # current, diff
         self.other_feats_mlp = nn.Sequential(
             nn.Linear(self.input_scalar_num, self.hidden_scalar_num),
             nn.BatchNorm1d(self.hidden_scalar_num),
@@ -62,9 +73,14 @@ class PaoModel(modulus.Module):
             nn.Linear(self.hidden_scalar_num, self.hidden_scalar_num),
             nn.BatchNorm1d(self.hidden_scalar_num),
             # nn.ReLU(),
-            nn.GELU()
+            nn.GELU(),
         )
-        self.other_feats_proj_list = nn.ModuleList([nn.Linear(self.hidden_scalar_num, self.hidden_scalar_num) for _ in range(self.vertical_level_num)])
+        self.other_feats_proj_list = nn.ModuleList(
+            [
+                nn.Linear(self.hidden_scalar_num, self.hidden_scalar_num)
+                for _ in range(self.vertical_level_num)
+            ]
+        )
         # layer norm
         self.layer_norm_in = self.num_hidden_total
         self.profile_layer_norm = nn.LayerNorm(self.layer_norm_in)
@@ -73,11 +89,18 @@ class PaoModel(modulus.Module):
             ResidualBlock(self.num_hidden_total, self.num_hidden_total, 5, 1, 2),
             ResidualBlock(self.num_hidden_total, self.num_hidden_total, 5, 1, 2),
             ResidualBlock(self.num_hidden_total, self.num_hidden_total, 5, 1, 2),
-            ResidualBlock(self.num_hidden_total, self.num_hidden_total, 5, 1, 2)
+            ResidualBlock(self.num_hidden_total, self.num_hidden_total, 5, 1, 2),
         )
         # lstm
         self.lstm = nn.Sequential(
-            nn.LSTM(self.num_hidden_total, self.num_hidden_total, 2, batch_first=True, bidirectional=True, dropout=0.0),
+            nn.LSTM(
+                self.num_hidden_total,
+                self.num_hidden_total,
+                2,
+                batch_first=True,
+                bidirectional=True,
+                dropout=0.0,
+            ),
         )
         # output layer
         self.output_profile_mlp_input_dim = self.num_hidden_total * 2
@@ -88,9 +111,11 @@ class PaoModel(modulus.Module):
             nn.GELU(),
             nn.Linear(self.num_hidden_total, self.hidden_profile_num),
             nn.GELU(),
-            nn.Linear(self.hidden_profile_num, self.target_profile_num)
+            nn.Linear(self.hidden_profile_num, self.target_profile_num),
         )
-        self.output_scalar_mlp_input_dim = self.num_hidden_total * self.vertical_level_num * 2
+        self.output_scalar_mlp_input_dim = (
+            self.num_hidden_total * self.vertical_level_num * 2
+        )
         self.scalar_layer_norm = nn.LayerNorm(self.output_scalar_mlp_input_dim)
         self.scalar_output_mlp = nn.Sequential(
             nn.Linear(self.output_scalar_mlp_input_dim, self.hidden_scalar_num),
@@ -99,19 +124,23 @@ class PaoModel(modulus.Module):
             nn.Linear(self.hidden_scalar_num, self.hidden_scalar_num),
             # nn.ReLU(),
             nn.GELU(),
-            nn.Linear(self.hidden_scalar_num, self.target_scalar_num)
+            nn.Linear(self.hidden_scalar_num, self.target_scalar_num),
         )
 
     def forward(self, x):
         # reshape input
         batch_size = x.size(0)
-        profile_part = x[:, :self.input_profile_num*self.vertical_level_num]
-        profile_inputs = profile_part.reshape(batch_size, self.input_profile_num, self.vertical_level_num)
-        scalar_inputs = x[:, self.input_profile_num*self.vertical_level_num:]
+        profile_part = x[:, : self.input_profile_num * self.vertical_level_num]
+        profile_inputs = profile_part.reshape(
+            batch_size, self.input_profile_num, self.vertical_level_num
+        )
+        scalar_inputs = x[:, self.input_profile_num * self.vertical_level_num :]
         dim_profile = []
         # scale_ix = 0
         for group_ix, feature_scale in enumerate(self.feature_scale_list):
-            origin_x = profile_inputs[:, group_ix, :] # (batch, self.vertical_level_num)
+            origin_x = profile_inputs[
+                :, group_ix, :
+            ]  # (batch, self.vertical_level_num)
             x = feature_scale(origin_x)  # (batch, self.vertical_level_num)
             # scale_ix += 1
             x = x.unsqueeze(-1)  # (batch, 60, 1)
@@ -132,12 +161,12 @@ class PaoModel(modulus.Module):
             # x_diff_diff = x_diff_diff.unsqueeze(-1)  # (batch, 60, 1)
             # dim_profile.append(x_diff_diff)
 
-        # x = torch.cat(dim_profile, dim=2)  # (batch, 60, self.input_profile_num)
-        x = torch.stack(dim_profile, dim=3) # Stack along a new dimension (dimension 3)
-        x = x.permute(0, 1, 3, 2).contiguous() # Permute to get the desired shape (might need adjustment)
-        position = torch.arange(0, 60, device=x.device).unsqueeze(0).repeat(x.size(0), 1)  # (x.size(0)->batch, 60)
+        x = torch.cat(dim_profile, dim=2)  # (batch, 60, self.input_profile_num)
+        position = (
+            torch.arange(0, 60, device=x.device).unsqueeze(0).repeat(x.size(0), 1)
+        )  # (x.size(0)->batch, 60)
         position = self.positional_encoding(position)  # (batch, 60, 128)
-        x = self.input_linear(x)  # (batch, profile_len, 128)
+        x = self.input_linear(x)  # (batch, profile_len, hidden_profile_num)
         x = x + position
         # other cols
         scalar_x = scalar_inputs  # (batch, 19)
@@ -165,13 +194,21 @@ class PaoModel(modulus.Module):
         scalar_output = self.scalar_output_mlp(x)
         # Reshape output
         profile_part = profile_output.reshape(batch_size, self.target_profile_num * 60)
-        y = torch.cat([profile_part, scalar_output], dim = 1)
+        y = torch.cat([profile_part, scalar_output], dim=1)
         # Prune output
         if self.output_prune:
             # Zeyuan says that the .clone() and .clone().zero_() helped bypass a torchscript issue. Reason unclear.
             y = y.clone()
-            y[:, 60:60+self.strato_lev_out] = y[:, 60:60+self.strato_lev_out].clone().zero_()
-            y[:, 120:120+self.strato_lev_out] = y[:, 120:120+self.strato_lev_out].clone().zero_()
-            y[:, 180:180+self.strato_lev_out] = y[:, 180:180+self.strato_lev_out].clone().zero_()
-            y[:, 240:240+self.strato_lev_out] = y[:, 240:240+self.strato_lev_out].clone().zero_()
+            y[:, 60 : 60 + self.strato_lev_out] = (
+                y[:, 60 : 60 + self.strato_lev_out].clone().zero_()
+            )
+            y[:, 120 : 120 + self.strato_lev_out] = (
+                y[:, 120 : 120 + self.strato_lev_out].clone().zero_()
+            )
+            y[:, 180 : 180 + self.strato_lev_out] = (
+                y[:, 180 : 180 + self.strato_lev_out].clone().zero_()
+            )
+            y[:, 240 : 240 + self.strato_lev_out] = (
+                y[:, 240 : 240 + self.strato_lev_out].clone().zero_()
+            )
         return y
